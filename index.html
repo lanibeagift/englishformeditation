@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>VocabMaster — Học từ vựng Spaced Repetition</title>
+  <meta name="description" content="Học từ vựng tiếng Anh để hiểu pháp thoại Vipassana, theo phương pháp spaced repetition. Hoạt động offline.">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="VocabMaster">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800;9..144,900&family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="home" id="home">
+  <header class="home-header">
+    <div class="brand">
+      <div class="brand-mark">V</div>
+      <span>VocabMaster</span>
+    </div>
+    <div class="stats-bar">
+      <button onclick="showOnboard()" title="Xem hướng dẫn" style="display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--bg-soft);color:var(--ink-soft);font-size:13px;font-weight:700">?</button>
+      <span title="Trạng thái kết nối" style="display:inline-flex;align-items:center;gap:6px"><span id="netStatus" style="width:8px;height:8px;border-radius:50%;background:var(--success);transition:background .3s"></span></span>
+      <span><strong class="s-new" id="homeNew">0</strong> Từ mới</span>
+      <span><strong class="s-learn" id="homeLearn">0</strong> Đã học</span>
+      <span><strong class="s-review" id="homeReview">0</strong> Ôn tập</span>
+    </div>
+  </header>
+
+  <div class="hero">
+    <h1>Học từ vựng theo phương pháp <em>spaced repetition</em></h1>
+    <p>Lặp lại đúng thời điểm — nhớ lâu hơn với công sức ít hơn. Flashcard, trắc nghiệm, gõ từ, phát âm và mini-game.</p>
+  </div>
+
+  <div id="dailyReviewCard" style="margin-bottom:32px"></div>
+
+  <div class="section-label">Chọn chủ đề để bắt đầu</div>
+  <div class="topic-grid" id="topicGrid"></div>
+</div>
+
+<div class="study-page" id="studyPage">
+  <nav class="top-nav">
+    <button class="nav-back" onclick="backHome()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      Quay lại
+    </button>
+    <div class="mode-switcher">
+      <button data-main="view" onclick="switchMain('view')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        Xem từ
+      </button>
+      <button data-main="learn" class="active" onclick="switchMain('learn')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+        Học
+      </button>
+      <button data-main="play" onclick="switchMain('play')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect x="2" y="6" width="20" height="12" rx="2"/></svg>
+        Chơi
+      </button>
+    </div>
+    <div class="xp-badge">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      <span id="xpCount">+0</span>
+    </div>
+  </nav>
+
+  <div id="sessionContext" style="text-align:center;padding:10px 16px;font-size:13px;color:var(--ink-soft);background:white;border-bottom:1px solid var(--border)"></div>
+
+  <div class="study-container" id="learnView">
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    
+    <div class="sub-tabs">
+      <button class="sub-tab active" data-sub="flash" onclick="switchSub('flash')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+        Flashcard
+      </button>
+      <button class="sub-tab" data-sub="quiz" onclick="switchSub('quiz')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+        Trắc nghiệm
+      </button>
+      <button class="sub-tab" data-sub="type" onclick="switchSub('type')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H4a1 1 0 0 1-1-1v-9a9 9 0 0 1 18 0v9a1 1 0 0 1-1 1h-2a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg>
+        Nghe & Gõ
+      </button>
+      <button class="sub-tab" data-sub="pron" onclick="switchSub('pron')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 18v4"/></svg>
+        Phát âm
+      </button>
+      <button class="sub-tab" data-sub="translate" onclick="switchSub('translate')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="m14 18h6"/></svg>
+        Dịch câu
+      </button>
+    </div>
+
+    <div id="cardArea"></div>
+
+    <div class="mode-label" id="modeLabel">Chế độ 1/5: Flashcard</div>
+    <div class="status-row">
+      <span class="s-new"><strong id="countNew">0</strong> Từ mới</span>
+      <span class="s-learn"><strong id="countLearn">0</strong> Đã học</span>
+      <span class="s-review"><strong id="countReview">0</strong> Ôn tập</span>
+    </div>
+  </div>
+
+  <div class="study-container" id="viewList" style="display:none">
+    <div class="list-header">
+      <h2 class="list-title">Thuật ngữ trong học phần này <span class="list-count" id="listCount"></span></h2>
+    </div>
+    <div style="background:var(--warn-soft);border-left:3px solid var(--warn);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--ink-soft);line-height:1.5">
+      <strong style="color:#b45309">💡 Lưu ý về "Từ liên quan":</strong> Các từ này có nghĩa gần với từ chính, nhưng <strong>có thể có sắc thái khác</strong> trong ngữ cảnh thiền Vipassana. Hãy ưu tiên học từ chính và câu ví dụ.
+    </div>
+    <div id="wordList"></div>
+  </div>
+
+  <div class="game-container" id="playView" style="display:none">
+    <div id="gamePicker">
+      <h2 style="font-family:'Inter',sans-serif;font-size:28px;font-weight:800;letter-spacing:-0.02em;margin:0 0 8px;text-align:center">Trò chơi ghép cặp</h2>
+      <p style="color:var(--ink-soft);text-align:center;margin:0 0 32px">Ghép từ tiếng Anh với nghĩa tiếng Việt — luyện trí nhớ trong thời gian ngắn nhất</p>
+      <div style="max-width:480px;margin:0 auto">
+        <button class="topic-card" onclick="startGameMode('vi')" style="--accent:#fb923c;--accent-soft:#ffedd5;width:100%">
+          <div class="topic-icon" style="color:#fb923c;background:#ffedd5">🇻🇳</div>
+          <div class="topic-name">Bắt đầu chơi</div>
+          <div class="topic-en">Ghép từ tiếng Anh ↔ nghĩa tiếng Việt</div>
+          <div class="topic-meta">
+            <span class="topic-count" id="game-vi-count">— từ khả dụng</span>
+            <span style="color:#fb923c;font-weight:700">▶</span>
+          </div>
+        </button>
+      </div>
+    </div>
+    <div id="gameBoard" style="display:none">
+      <div class="game-header">
+        <button class="nav-back" onclick="exitGame()" style="color:var(--ink-soft)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m15 18-6-6 6-6"/></svg>
+          Quay lại
+        </button>
+        <div class="game-stats">
+          <div class="game-stat"><span>✨</span> <span id="gameProgress">0/6</span></div>
+          <div class="game-stat"><span>⚡</span> <span id="gamePts">0 pts</span></div>
+          <div class="game-stat timer"><span>⏱</span> <span id="gameTimer">0:00</span></div>
+          <button class="game-stat" onclick="restartCurrentGame()"><span>🔄</span> Làm lại</button>
+        </div>
+      </div>
+      <div class="game-grid" id="gameGrid"></div>
+    </div>
+    <div id="gameEmpty" style="display:none;text-align:center;padding:60px 20px">
+      <div style="font-size:60px;margin-bottom:14px">🤔</div>
+      <h3 style="font-family:'Inter',sans-serif;font-size:22px;font-weight:700;margin:0 0 8px">Chủ đề này không đủ từ để chơi</h3>
+      <p style="color:var(--ink-soft);margin:0 0 20px">Cần ít nhất 6 từ để chơi mini-game này.</p>
+    </div>
+  </div>
+</div>
+
+<div class="onboard-overlay" id="onboardOverlay">
+  <div class="onboard-card">
+    <div class="onboard-progress">
+      <div class="onboard-dot active" data-step="0"></div>
+      <div class="onboard-dot" data-step="1"></div>
+      <div class="onboard-dot" data-step="2"></div>
+      <div class="onboard-dot" data-step="3"></div>
+    </div>
+    <div class="onboard-body" id="onboardBody"></div>
+    <div class="onboard-footer">
+      <button class="onboard-btn onboard-btn-skip" onclick="finishOnboard()">Bỏ qua</button>
+      <button class="onboard-btn onboard-btn-back" id="onboardBackBtn" onclick="onboardPrev()" style="display:none">Quay lại</button>
+      <button class="onboard-btn onboard-btn-primary" id="onboardNextBtn" onclick="onboardNext()">Tiếp tục →</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
