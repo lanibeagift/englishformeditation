@@ -444,7 +444,7 @@ function openMixedReview() {
   }
   const queue = [
     ...dueAll.sort(() => Math.random() - 0.5),
-    ...newAll.sort(() => Math.random() - 0.5).slice(0, 20),
+    ...newAll.sort(() => Math.random() - 0.5),
   ];
   currentTopic = {
     id: '__mixed__',
@@ -481,7 +481,7 @@ function buildSessionQueue() {
     if (r.state === 'new') newW.push(w);
     else if (r.due <= now) due.push(w);
   });
-  sessionQueue = [...due, ...newW.slice(0, 20)];
+  sessionQueue = [...due, ...newW];
   if (sessionQueue.length === 0) {
     sessionQueue = [...currentTopic.words];
   }
