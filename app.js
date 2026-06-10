@@ -363,8 +363,8 @@ let subTab = 'flash';
 let flashFlipped = false;
 let xp = 0;
 
-// THỨ TỰ CÁC BƯỚC HỌC MỚI: Đẩy Phát Âm lên trước, Dịch câu ở cuối
-const MODE_ORDER = ['flash', 'quiz', 'type', 'pron', 'translate'];
+// THỨ TỰ CÁC BƯỚC HỌC MỚI (Bỏ dịch câu)
+const MODE_ORDER = ['flash', 'quiz', 'type', 'pron'];
 
 function updateSubTabStates() {
   const curIdx = MODE_ORDER.indexOf(subTab);
@@ -383,7 +383,7 @@ function advanceMode() {
       b.classList.toggle('active', b.dataset.sub === subTab);
     });
     updateSubTabStates();
-    const labels = { flash: '1/5: Flashcard', quiz: '2/5: Trắc nghiệm', type: '3/5: Nghe & Gõ', pron: '4/5: Phát âm', translate: '5/5: Dịch câu' };
+    const labels = { flash: '1/4: Flashcard', quiz: '2/4: Trắc nghiệm', type: '3/4: Nghe & Gõ', pron: '4/4: Phát âm' };
     document.getElementById('modeLabel').textContent = 'Chế độ ' + labels[subTab];
     flashFlipped = false;
     renderCurrentCard();
@@ -398,6 +398,21 @@ let awaitingFinalRating = false;
 let pronRevealed = false;
 let isMixedSession = false;
 
+// Hàm reset UI tab về flashcard (Dùng khi chuyển từ)
+function resetToFlashMode() {
+  subTab = 'flash';
+  flashFlipped = false;
+  wordMistakes = 0;
+  pronRevealed = false;
+  awaitingFinalRating = false;
+  document.querySelectorAll('.sub-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.sub === 'flash');
+  });
+  updateSubTabStates();
+  const lbl = document.getElementById('modeLabel');
+  if (lbl) lbl.textContent = 'Chế độ 1/4: Flashcard';
+}
+
 function openTopic(id) {
   currentTopic = VOCAB_DATA.find(t => t.id === id);
   isMixedSession = false;
@@ -406,13 +421,9 @@ function openTopic(id) {
   document.getElementById('studyPage').classList.add('active');
   document.getElementById('sessionContext').innerHTML = `<span style="color:var(--muted)">Đang học chủ đề:</span> <strong style="color:var(--ink)">${currentTopic.icon} ${currentTopic.name_vi}</strong>`;
   mainTab = 'learn';
-  subTab = 'flash';
-  wordMistakes = 0;
-  pronRevealed = false;
-  awaitingFinalRating = false;
-  flashFlipped = false;
   xp = 0;
   document.getElementById('xpCount').textContent = '+' + xp;
+  resetToFlashMode();
   switchMain('learn');
 }
 
@@ -449,13 +460,9 @@ function openMixedReview() {
   document.getElementById('studyPage').classList.add('active');
   document.getElementById('sessionContext').innerHTML = `<span style="background:linear-gradient(120deg,var(--primary),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700">🔀 Ôn tập tổng hợp</span> · <span style="color:var(--muted)">${queue.length} từ từ mọi chủ đề</span>`;
   mainTab = 'learn';
-  subTab = 'flash';
-  wordMistakes = 0;
-  pronRevealed = false;
-  awaitingFinalRating = false;
-  flashFlipped = false;
   xp = 0;
   document.getElementById('xpCount').textContent = '+' + xp;
+  resetToFlashMode();
   switchMain('learn');
 }
 
@@ -514,10 +521,27 @@ function switchSub(sub) {
     b.classList.toggle('active', b.dataset.sub === sub);
   });
   updateSubTabStates();
-  const labels = { flash: '1/5: Flashcard', quiz: '2/5: Trắc nghiệm', type: '3/5: Nghe & Gõ', pron: '4/5: Phát âm', translate: '5/5: Dịch câu' };
+  const labels = { flash: '1/4: Flashcard', quiz: '2/4: Trắc nghiệm', type: '3/4: Nghe & Gõ', pron: '4/4: Phát âm' };
   document.getElementById('modeLabel').textContent = 'Chế độ ' + labels[sub];
   flashFlipped = false;
   renderCurrentCard();
+}
+
+/* ============ QUEUE NAVIGATION ============ */
+function nextWord() {
+  if (currentIdx < sessionQueue.length) {
+    currentIdx++;
+    resetToFlashMode();
+    renderCurrentCard();
+  }
+}
+
+function prevWord() {
+  if (currentIdx > 0) {
+    currentIdx--;
+    resetToFlashMode();
+    renderCurrentCard();
+  }
 }
 
 /* ============ FINAL RATING ============ */
@@ -528,7 +552,7 @@ function renderFinalRating() {
   const suggestion = wordMistakes === 0 ? 'Dễ/Tốt' : wordMistakes === 1 ? 'Tốt/Khó' : 'Khó/Rất khó';
   area.innerHTML = `
     <div class="card-stage" style="padding:40px">
-      <div class="pron-label" style="color:var(--success)">✓ Đã hoàn thành cả 5 chế độ</div>
+      <div class="pron-label" style="color:var(--success)">✓ Đã hoàn thành 4 chế độ</div>
       <h1 class="word-display" style="margin:6px 0 2px">${w.en}</h1>
       <div style="color:var(--ink-soft);font-size:18px;margin-bottom:8px">${w.vi.split(/[;,]/)[0].trim()}</div>
       <div style="color:var(--muted);font-size:13px;margin-bottom:24px">
@@ -573,14 +597,7 @@ function renderFinalRating() {
 }
 
 function repeatWord() {
-  awaitingFinalRating = false;
-  subTab = 'flash';
-  flashFlipped = false;
-  document.querySelectorAll('.sub-tab').forEach(b => {
-    b.classList.toggle('active', b.dataset.sub === 'flash');
-  });
-  updateSubTabStates();
-  document.getElementById('modeLabel').textContent = 'Chế độ 1/5: Flashcard';
+  resetToFlashMode();
   renderCurrentCard();
 }
 
@@ -599,16 +616,7 @@ function finalRate(rating) {
   xp += rating === 0 ? 1 : (rating + 1) * 3;
   document.getElementById('xpCount').textContent = '+' + xp;
   currentIdx++;
-  subTab = 'flash';
-  flashFlipped = false;
-  wordMistakes = 0;
-  pronRevealed = false;
-  awaitingFinalRating = false;
-  document.querySelectorAll('.sub-tab').forEach(b => {
-    b.classList.toggle('active', b.dataset.sub === 'flash');
-  });
-  updateSubTabStates();
-  document.getElementById('modeLabel').textContent = 'Chế độ 1/5: Flashcard';
+  resetToFlashMode();
   renderCurrentCard();
 }
 
@@ -655,8 +663,11 @@ function phoneticize(word) {
 /* ============ RENDER CARD ============ */
 function renderCurrentCard() {
   const area = document.getElementById('cardArea');
+  const nav = document.getElementById('queueNav');
   updateCounts();
+  
   if (sessionQueue.length === 0) {
+    if(nav) nav.style.display = 'none';
     area.innerHTML = `<div class="done-state">
       <div class="done-emoji">🎉</div>
       <h2 class="done-title">Chưa có từ nào cần học!</h2>
@@ -665,7 +676,9 @@ function renderCurrentCard() {
     </div>`;
     return;
   }
+  
   if (currentIdx >= sessionQueue.length) {
+    if(nav) nav.style.display = 'none';
     const streak = getStreak();
     const progress = getTodayProgress();
     const goal = getGoal();
@@ -674,7 +687,7 @@ function renderCurrentCard() {
       <div class="done-emoji">${goalMet ? '🏆' : '✨'}</div>
       <h2 class="done-title">${goalMet ? 'Đã đạt mục tiêu hôm nay!' : 'Tuyệt vời! Đã xong phiên học'}</h2>
       <p class="done-subtitle">
-        Đã học ${sessionQueue.length} từ trong phiên này · ${progress.ratedCount}/${goal.newWords} từ hôm nay
+        Đã học lướt qua ${sessionQueue.length} từ trong phiên này · ${progress.ratedCount}/${goal.newWords} từ hoàn thành hôm nay
         ${streak.current >= 1 ? `<br>🔥 Chuỗi ${streak.current} ngày liên tiếp` : ''}
       </p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
@@ -688,6 +701,15 @@ function renderCurrentCard() {
     </div>`;
     return;
   }
+
+  // Cập nhật giao diện thanh chuyển từ
+  if(nav) {
+    nav.style.display = 'flex';
+    document.getElementById('queuePos').textContent = `Từ ${currentIdx + 1} / ${sessionQueue.length}`;
+    document.getElementById('btnPrevWord').style.visibility = currentIdx > 0 ? 'visible' : 'hidden';
+    document.getElementById('btnNextWord').style.visibility = 'visible'; 
+  }
+
   if (awaitingFinalRating) {
     renderFinalRating();
     return;
@@ -696,7 +718,6 @@ function renderCurrentCard() {
   else if (subTab === 'quiz') renderQuiz();
   else if (subTab === 'type') renderType();
   else if (subTab === 'pron') renderPron();
-  else if (subTab === 'translate') renderTranslate();
 }
 
 function currentWord() { return sessionQueue[currentIdx]; }
@@ -704,7 +725,6 @@ function currentWord() { return sessionQueue[currentIdx]; }
 /* ============ FLASHCARD ============ */
 function renderFlash() {
   const w = currentWord();
-  const rec = getRec(w.id);
   const phon = getIpaFor(w.en);
   const area = document.getElementById('cardArea');
 
@@ -774,16 +794,7 @@ function markKnownFromFlash() {
   xp += 5;
   document.getElementById('xpCount').textContent = '+' + xp;
   currentIdx++;
-  subTab = 'flash';
-  flashFlipped = false;
-  wordMistakes = 0;
-  pronRevealed = false;
-  awaitingFinalRating = false;
-  document.querySelectorAll('.sub-tab').forEach(b => {
-    b.classList.toggle('active', b.dataset.sub === 'flash');
-  });
-  updateSubTabStates();
-  document.getElementById('modeLabel').textContent = 'Chế độ 1/5: Flashcard';
+  resetToFlashMode();
   renderCurrentCard();
 }
 
@@ -1117,74 +1128,6 @@ function levenshtein(a, b) {
   return dp[m][n];
 }
 
-/* ============ TRANSLATE (DỊCH CÂU) ============ */
-function renderTranslate() {
-  const w = currentWord();
-  const area = document.getElementById('cardArea');
-
-  // Bỏ qua nếu từ này không có đủ câu ví dụ song ngữ
-  if (!w.ex_en || !w.ex_vi) {
-    area.innerHTML = `
-      <div class="card-stage" style="padding:40px">
-        <div style="font-size:48px;margin-bottom:14px">⏭</div>
-        <h2 style="font-family:'Inter',sans-serif;font-weight:700;font-size:22px;margin:0 0 8px">Từ này không đủ ví dụ</h2>
-        <p style="color:var(--ink-soft);margin:0 0 24px">Bỏ qua phần dịch câu.</p>
-        <button class="btn-primary" style="max-width:200px" onclick="advanceMode()">Tiếp tục →</button>
-      </div>
-    `;
-    setTimeout(advanceMode, 800);
-    return;
-  }
-
-  // Random 50% Dịch EN->VI hoặc VI->EN
-  const isEnToVi = Math.random() < 0.5;
-  const promptBadge = isEnToVi ? "DỊCH SANG TIẾNG VIỆT" : "DỊCH SANG TIẾNG ANH";
-  const promptText = isEnToVi ? w.ex_en : w.ex_vi;
-  const targetText = isEnToVi ? w.ex_vi : w.ex_en;
-
-  area.innerHTML = `
-    <div class="card-stage" style="padding:40px">
-      <span style="display:inline-block;padding:4px 12px;border-radius:999px;background:var(--violet-soft);color:var(--violet);font-size:12px;font-weight:600;letter-spacing:0.04em;margin-bottom:18px">${promptBadge}</span>
-      
-      <div class="example-box" style="text-align:center;font-size:19px;border-left-color:var(--violet);max-width:680px;line-height:1.7; margin: 0 auto 20px;">
-        ${promptText}
-      </div>
-
-      <div class="type-input-wrap" style="width:100%; max-width:600px; margin-top:0;">
-        <textarea class="type-input" id="translateInput" rows="3" placeholder="Nhập bản dịch của bạn vào đây..." style="resize:none; padding:16px; font-size:16px; border-radius:var(--radius);" onkeydown="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); showTranslateAnswer('${targetText.replace(/'/g, "\\'")}'); }"></textarea>
-      </div>
-      
-      <button id="translateCheckBtn" class="btn-primary" style="max-width:220px;margin:20px auto 0" onclick="showTranslateAnswer('${targetText.replace(/'/g, "\\'")}')">Xem đáp án</button>
-
-      <div id="translateAnswerArea" style="display:none; margin-top: 24px; width: 100%; max-width: 600px;">
-        <div style="text-align:left; background:var(--success-soft); color:#065f46; padding:18px; border-radius:12px; font-size:16px; line-height: 1.5;">
-          <div style="font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--success); margin-bottom:8px;">ĐÁP ÁN THAM KHẢO</div>
-          <em>${targetText}</em>
-        </div>
-        <button class="btn-primary" id="translateNextBtn" style="max-width:220px;margin:20px auto 0" onclick="completeTranslate()">Tiếp tục →</button>
-      </div>
-
-      <div class="kb-hint" id="translateKbHint">Nhấn <kbd>Enter</kbd> để xem đáp án (Shift+Enter để xuống dòng)</div>
-    </div>
-  `;
-  setTimeout(() => document.getElementById('translateInput').focus(), 100);
-}
-
-function showTranslateAnswer(answerText) {
-  document.getElementById('translateInput').disabled = true;
-  document.getElementById('translateCheckBtn').style.display = 'none';
-  document.getElementById('translateAnswerArea').style.display = 'block';
-  document.getElementById('translateKbHint').innerHTML = 'Nhấn <kbd>Enter</kbd> để tiếp tục';
-  
-  const nextBtn = document.getElementById('translateNextBtn');
-  nextBtn.focus();
-}
-
-function completeTranslate() {
-  xp += 5; 
-  document.getElementById('xpCount').textContent = '+' + xp;
-  advanceMode(); 
-}
 
 /* ============ WORD LIST VIEW ============ */
 function renderWordList() {
@@ -1356,7 +1299,7 @@ function handleTileClick(idx) {
 const ONBOARD_STEPS = [
   { icon: '👋', title: 'Chào mừng bạn!', body: '<p class="onboard-text"><strong>VocabMaster</strong> là công cụ giúp bạn ghi nhớ từ vựng tiếng Anh phục vụ cho các khóa thiền Vipassana.</p><p class="onboard-text">Ứng dụng hoạt động <strong>hoàn toàn offline</strong>, không cần mạng, giúp bạn tập trung tối đa.</p>' },
   { icon: '🧠', title: 'Spaced Repetition', body: '<p class="onboard-text">Thay vì học vẹt, ứng dụng tự động tính toán thời điểm hoàn hảo để ôn tập lại một từ trước khi bạn kịp quên nó.</p><div class="onboard-features"><div class="onboard-feat"><div class="onboard-feat-icon" style="color:var(--primary)">🌱</div><div class="onboard-feat-text"><strong>Từ mới</strong>Học lần đầu, ôn lại ngay sau 10 phút.</div></div><div class="onboard-feat"><div class="onboard-feat-icon" style="color:var(--orange)">🔄</div><div class="onboard-feat-text"><strong>Ôn tập</strong>Khoảng cách ôn tập tăng dần (1 ngày, 3 ngày, 1 tuần...).</div></div></div>' },
-  { icon: '🎯', title: '5 Chế độ Học', body: '<p class="onboard-text">Mỗi từ vựng bạn sẽ trải qua 5 bước để đảm bảo nhớ sâu mọi khía cạnh:</p><div class="onboard-features" style="grid-template-columns:1fr 1fr"><div class="onboard-feat"><div class="onboard-feat-icon">🃏</div><div class="onboard-feat-text"><strong>1. Flashcard</strong>Ghi nhớ nghĩa</div></div><div class="onboard-feat"><div class="onboard-feat-icon">✅</div><div class="onboard-feat-text"><strong>2. Quiz</strong>Trắc nghiệm</div></div><div class="onboard-feat"><div class="onboard-feat-icon">⌨️</div><div class="onboard-feat-text"><strong>3. Nghe & Gõ</strong>Nhớ chính tả</div></div><div class="onboard-feat"><div class="onboard-feat-icon">🎙️</div><div class="onboard-feat-text"><strong>4. Phát âm</strong>Luyện nói chuẩn</div></div><div class="onboard-feat" style="grid-column: span 2;"><div class="onboard-feat-icon">📝</div><div class="onboard-feat-text"><strong>5. Dịch câu</strong>Hiểu ngữ cảnh thực tế</div></div></div>' },
+  { icon: '🎯', title: '4 Chế độ Học', body: '<p class="onboard-text">Mỗi từ vựng bạn sẽ trải qua 4 bước để đảm bảo nhớ sâu mọi khía cạnh:</p><div class="onboard-features" style="grid-template-columns:1fr 1fr"><div class="onboard-feat"><div class="onboard-feat-icon">🃏</div><div class="onboard-feat-text"><strong>1. Flashcard</strong>Ghi nhớ nghĩa</div></div><div class="onboard-feat"><div class="onboard-feat-icon">✅</div><div class="onboard-feat-text"><strong>2. Quiz</strong>Trắc nghiệm</div></div><div class="onboard-feat"><div class="onboard-feat-icon">⌨️</div><div class="onboard-feat-text"><strong>3. Nghe & Gõ</strong>Nhớ chính tả</div></div><div class="onboard-feat"><div class="onboard-feat-icon">🎙️</div><div class="onboard-feat-text"><strong>4. Phát âm</strong>Luyện nói chuẩn</div></div></div>' },
   { icon: '🔥', title: 'Mục tiêu mỗi ngày', isLast: true, body: '<p class="onboard-text">Chìa khóa của phương pháp này là <strong>sự kiên trì</strong>. Hãy duy trì chuỗi ngày học của bạn (Streak).</p><p class="onboard-text">Mỗi ngày, hãy đảm bảo bạn hoàn thành mục tiêu <strong style="color:var(--primary)">10 từ mới</strong> hoặc ôn tập hết các từ đến hạn nhé.</p>' }
 ];
 
