@@ -3,7 +3,20 @@
    Chứa toàn bộ logic xử lý của ứng dụng
    ========================================== */
 
-/* ============ STORAGE ============ */
+/* ============ VOCAB DATA & STORAGE ============ */
+
+// Khai báo bộ khung các chủ đề và liên kết đến tên file JSON tương ứng
+let VOCAB_DATA = [
+  { id: "common", icon: "📚", name_en: "Words Commonly Used in Course", name_vi: "Từ vựng thông dụng trong khóa thiền", file: "common.json", words: [] },
+  { id: "actions", icon: "⚡", name_en: "Actions & Concepts", name_vi: "Hành động & Khái niệm", file: "actions.json", words: [] },
+  { id: "sensations", icon: "✨", name_en: "Sensations", name_vi: "Cảm giác", file: "sensations.json", words: [] },
+  { id: "organs", icon: "🫀", name_en: "Body Organs", name_vi: "Các bộ phận trên cơ thể", file: "organs.json", words: [] },
+  { id: "diseases", icon: "🏥", name_en: "Diseases", name_vi: "Các loại bệnh", file: "diseases.json", words: [] }
+];
+
+let WORD_INDEX = {};
+let WORD_BY_EN = {};
+
 const STORE_KEY = 'vocabmaster_v1';
 function loadStore() {
   try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; }
@@ -11,15 +24,35 @@ function loadStore() {
 function saveStore(s) { localStorage.setItem(STORE_KEY, JSON.stringify(s)); }
 let store = loadStore();
 
-// Build a lookup from word id → word object (for fast access from anywhere)
-const WORD_INDEX = {};
-VOCAB_DATA.forEach(t => t.words.forEach(w => { WORD_INDEX[w.id] = w; }));
+/* ============ LOAD DATA ASYNC ============ */
+async function loadVocabData() {
+  try {
+    for (let topic of VOCAB_DATA) {
+      const response = await fetch(`./${topic.file}`);
+      if (!response.ok) throw new Error(`Không thể tải ${topic.file}`);
+      topic.words = await response.json();
+    }
 
-// Find a word object by its English text (used by IPA/synonym lookups)
-const WORD_BY_EN = {};
-VOCAB_DATA.forEach(t => t.words.forEach(w => {
-  WORD_BY_EN[w.en.toLowerCase().trim()] = w;
-}));
+    // Tạo index tìm kiếm nhanh SAU KHI dữ liệu đã được tải xong
+    VOCAB_DATA.forEach(t => t.words.forEach(w => {
+      WORD_INDEX[w.id] = w;
+      WORD_BY_EN[w.en.toLowerCase().trim()] = w;
+    }));
+
+    // Bắt đầu render giao diện
+    renderHome();
+    updateOnlineStatus();
+    maybeShowOnboard();
+
+  } catch (error) {
+    console.error("Lỗi tải dữ liệu:", error);
+    document.getElementById('topicGrid').innerHTML = `
+      <div style="grid-column: 1/-1; padding: 20px; background: #fee2e2; color: #991b1b; border-radius: 12px;">
+        <strong>Lỗi tải dữ liệu:</strong> ${error.message} <br>
+        <em>Hãy đảm bảo bạn đã đẩy các file .json lên cùng thư mục trên GitHub.</em>
+      </div>`;
+  }
+}
 
 function getIpaFor(wordEn) {
   const w = WORD_BY_EN[wordEn.toLowerCase().trim()];
@@ -1430,14 +1463,13 @@ function updateOnlineStatus() {
   const el = document.getElementById('netStatus');
   if (el) el.style.background = navigator.onLine ? 'var(--success)' : 'var(--danger)';
 }
-window.addEventListener('online', updateOnlineStatus);
-window.addEventListener('offline', updateOnlineStatus);
 
 // INIT
 document.addEventListener('DOMContentLoaded', () => {
-  renderHome();
-  updateOnlineStatus();
-  maybeShowOnboard();
+  loadVocabData();
+  
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
   
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
