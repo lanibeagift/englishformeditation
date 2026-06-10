@@ -398,7 +398,7 @@ let awaitingFinalRating = false;
 let pronRevealed = false;
 let isMixedSession = false;
 
-// Hàm reset UI tab về flashcard (Dùng khi chuyển từ)
+// Hàm reset UI tab về flashcard (Dùng khi nhảy cóc giữa các từ)
 function resetToFlashMode() {
   subTab = 'flash';
   flashFlipped = false;
@@ -528,17 +528,9 @@ function switchSub(sub) {
 }
 
 /* ============ QUEUE NAVIGATION ============ */
-function nextWord() {
-  if (currentIdx < sessionQueue.length) {
-    currentIdx++;
-    resetToFlashMode();
-    renderCurrentCard();
-  }
-}
-
-function prevWord() {
-  if (currentIdx > 0) {
-    currentIdx--;
+function jumpToWord(idx) {
+  if (idx >= 0 && idx < sessionQueue.length) {
+    currentIdx = idx;
     resetToFlashMode();
     renderCurrentCard();
   }
@@ -663,7 +655,7 @@ function phoneticize(word) {
 /* ============ RENDER CARD ============ */
 function renderCurrentCard() {
   const area = document.getElementById('cardArea');
-  const nav = document.getElementById('queueNav');
+  const nav = document.getElementById('numberPagination');
   updateCounts();
   
   if (sessionQueue.length === 0) {
@@ -687,7 +679,7 @@ function renderCurrentCard() {
       <div class="done-emoji">${goalMet ? '🏆' : '✨'}</div>
       <h2 class="done-title">${goalMet ? 'Đã đạt mục tiêu hôm nay!' : 'Tuyệt vời! Đã xong phiên học'}</h2>
       <p class="done-subtitle">
-        Đã học lướt qua ${sessionQueue.length} từ trong phiên này · ${progress.ratedCount}/${goal.newWords} từ hoàn thành hôm nay
+        Bạn đã lướt qua ${sessionQueue.length} từ trong phiên này · ${progress.ratedCount}/${goal.newWords} từ hoàn thành hôm nay
         ${streak.current >= 1 ? `<br>🔥 Chuỗi ${streak.current} ngày liên tiếp` : ''}
       </p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
@@ -702,12 +694,15 @@ function renderCurrentCard() {
     return;
   }
 
-  // Cập nhật giao diện thanh chuyển từ
+  // Cập nhật Lưới Pagination (Các số tròn)
   if(nav) {
     nav.style.display = 'flex';
-    document.getElementById('queuePos').textContent = `Từ ${currentIdx + 1} / ${sessionQueue.length}`;
-    document.getElementById('btnPrevWord').style.visibility = currentIdx > 0 ? 'visible' : 'hidden';
-    document.getElementById('btnNextWord').style.visibility = 'visible'; 
+    let html = '';
+    for(let i = 0; i < sessionQueue.length; i++) {
+      const isActive = (i === currentIdx);
+      html += `<button class="page-num-btn ${isActive ? 'active' : ''}" onclick="jumpToWord(${i})">${i + 1}</button>`;
+    }
+    nav.innerHTML = html;
   }
 
   if (awaitingFinalRating) {
