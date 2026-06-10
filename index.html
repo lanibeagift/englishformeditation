@@ -92,15 +92,21 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 18v4"/></svg>
         Phát âm
       </button>
-      <button class="sub-tab" data-sub="translate" onclick="switchSub('translate')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="m14 18h6"/></svg>
-        Dịch câu
+    </div>
+
+    <div id="queueNav" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px; padding: 0 8px;">
+      <button onclick="prevWord()" class="nav-btn" id="btnPrevWord" style="background:transparent; border:none; color:var(--primary); font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px; padding:8px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m15 18-6-6 6-6"/></svg> Từ trước
+      </button>
+      <span id="queuePos" style="font-size:14px; font-weight:600; color:var(--muted);"></span>
+      <button onclick="nextWord()" class="nav-btn" id="btnNextWord" style="background:transparent; border:none; color:var(--primary); font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px; padding:8px">
+        Từ sau <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
     </div>
 
     <div id="cardArea"></div>
 
-    <div class="mode-label" id="modeLabel">Chế độ 1/5: Flashcard</div>
+    <div class="mode-label" id="modeLabel">Chế độ 1/4: Flashcard</div>
     <div class="status-row">
       <span class="s-new"><strong id="countNew">0</strong> Từ mới</span>
       <span class="s-learn"><strong id="countLearn">0</strong> Đã học</span>
